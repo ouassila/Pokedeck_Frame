@@ -1,0 +1,100 @@
+CREATE TABLE "chat_history" (
+	`_id`	INTEGER,
+	`thread_id`	TEXT,
+	`jid`	TEXT, => le JID de l'autre
+	`author_jid`	TEXT, => Le JID de l'auteur du message
+	`author_nickname`	TEXT, => Le JID /ressourse , utile pour les groupes
+	`timestamp`	DATETIME, => Date de création
+	`body`	TEXT, => Le text du message
+	`message_id`	TEXT, => 
+	`receipt_status`	INTEGER, => non utilisé
+	`state`	INTEGER, => 0 non lu, 1 lu
+	`last_access`	NUMERIC, => Date actuel
+	`picture_id`	INTEGER,
+	`stack_status`	INTEGER, => 0 message non traité, 1 message traité.
+}
+
+CREATE TABLE "notification" (
+	`id`	INTEGER,
+	`to_jid`	TEXT, => Destinataire
+	`from_jid`	TEXT, => Expéditeur
+	`picture_id`	NUMERIC,
+	`message_id`	TEXT,
+	`timestamp`	NUMERIC, => Date de création de la notif (Date actuel)
+	`type`	NUMERIC, => Non utilisé
+	`state`	NUMERIC, => 0 non lu, 1 lu
+	`body`	TEXT, => Message associé 
+	`jid`	TEXT, => L'autre personne
+	`last_access`	NUMERIC, => Dernière consultation
+	PRIMARY KEY(id)
+)
+
+CREATE TABLE "picture" (
+	`_id`	INTEGER,
+	`picture_id`	INTEGER,
+	`jid`	TEXT, => L'autre personne
+	`author_jid`	TEXT, => Le créateur
+	`cover`	TEXT, => 
+	`revelation`	TEXT, => 
+	`message`	TEXT, => Message associé lors de l'envoie du wizz
+	`send_mode`	TEXT, => 'normal' ou 'ephemeral'
+	`revelation_length`	INTEGER, => nombre de message à envoyé pour révéler
+	`geolocation_latitude`	REAL, => GPS (Pas utilisé)
+	`geolocation_longitude`	REAL, => GPS (Pas utilisé)
+	`state`	INTEGER, 0 non découvert, 1 découvert
+	`revelation_current_step`	INTEGER, => Etape de révélation en cours
+	`geolocation_city`	TEXT, => La ville
+	`geolocation_state`	TEXT, => Région/Etat
+	`last_access`	NUMERIC, => Dernier accès
+	`timestamp`	NUMERIC, => Date de création du wizz
+	PRIMARY KEY(_id)
+)
+
+Reception d'un message
+ONE to ONE
+
+1. Enregistrer le message en base avec un status non traité
+2. Associé à la dernière image découverte ou non découverte. Regarder dans la table picture si le JID correspond
+3. Créer un chat history avec picture ID si y'en a une.
+4. Changer le status du message à 'traité' => Update (Picture ID, Stack status, Last access)
+5. Créer la notification en DB.
+6. Créer un évenement pour remonter l'info au user.
+	1. Dans l'appli mais pas le chat. (4 activty : Chat, Notif, Wizz et camera activty)
+	2. Dans l'appli et dans le chat avec la même personne.
+	3. Dans le chat mais message d'une autre personne.
+	4. Pas dans l'appli (PUSH pas encore en place pour android)
+7. Mettre à jour les étapes de révélations
+	1. Si je suis pas l'auteur du wizz
+		- Dans le chat mettre à jour à la fin de l'animation de revelation
+		- Hors chat ne rien faire
+	2. Si je suis l'auteur du wizz :
+		- Et que je suis dans le chat avec cette personne. La mise a jour se faire dans le chat sans animation (dès reception du messsage).
+		- Je suis dans le chat mais avec une autre personne. Mettre à jour.
+		- Je suis hors chat. Mettre à jour.
+		
+		//Dans le chat
+		if(inChat){
+		
+			//Dans le chat avec la personne qui a envoyé le message
+			if(message.jid == userInChat.jid){
+			}
+			else{
+				//Calback nouveau message
+				Dans le chat mettre à jour pour dire que nouvelle notif recu
+			}
+		}
+		
+		//Hors chat
+		else
+		{	
+			//Calback nouveau message
+			Dans le chat mettre à jour pour dire que nouvelle notif recu
+		}
+		
+		}
+		
+	
+	L'auteur ne voit pas les animations de révélation.
+	
+	1- Listener
+	2- Service + Broadcast Listener (BaseActivity rattache le service onNewMessage());
